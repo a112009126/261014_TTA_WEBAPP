@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KMA 키워드 모니터링 대시보드</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main class="container">
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">WEB DATA DASHBOARD</p>
+        <h1>KMA 키워드 모니터링</h1>
+        <p class="subheading">네이버 검색 결과를 수집하고 키워드별로 확인합니다.</p>
+      </div>
+      <form method="post" action="{{ url_for('refresh') }}">
+        <button class="primary" type="submit">데이터 새로고침</button>
+      </form>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="messages">
+          {% for category, message in messages %}
+            <div class="message {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <section class="stats">
+      <article class="stat-card"><span>수집 데이터</span><strong>{{ total }}</strong><small>건</small></article>
+      <article class="stat-card"><span>검색 키워드</span><strong>{{ keywords|length }}</strong><small>개</small></article>
+      <article class="stat-card"><span>마지막 수집</span><strong class="date">{{ last_updated or "아직 수집 전" }}</strong></article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <div><h2>수집 결과</h2><p>키워드 또는 제목·URL로 검색할 수 있습니다.</p></div>
+        <a class="secondary-button" href="{{ url_for('download') }}">엑셀 다운로드</a>
+      </div>
+      <form class="filters" method="get" action="{{ url_for('index') }}">
+        <label>키워드
+          <select name="keyword">
+            <option value="">전체 키워드</option>
+            {% for keyword in keywords %}
+              <option value="{{ keyword }}" {% if keyword_filter == keyword %}selected{% endif %}>{{ keyword }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="search-field">제목 / URL
+          <input type="search" name="q" value="{{ query }}" placeholder="검색어 입력">
+        </label>
+        <button class="secondary-button" type="submit">검색</button>
+        <a class="reset-link" href="{{ url_for('index') }}">초기화</a>
+      </form>
+
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>키워드</th><th>제목</th><th>URL</th><th>수집 시각</th></tr></thead>
+          <tbody>
+          {% for row in rows %}
+            <tr>
+              <td><span class="keyword">{{ row.keyword }}</span></td>
+              <td class="title-cell">{{ row.title }}</td>
+              <td><a href="{{ row.url }}" target="_blank" rel="noopener noreferrer">결과 열기 ↗</a></td>
+              <td class="date-cell">{{ row.collected_at }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="4" class="empty">
+              아직 표시할 데이터가 없습니다. <strong>데이터 새로고침</strong>을 눌러 수집을 시작하거나 검색 조건을 초기화해 주세요.
+            </td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <p class="table-footer">현재 표시 {{ rows|length }}건 · 전체 수집 {{ total }}건</p>
+    </section>
+    <footer>로컬 실행용 Flask 대시보드 · 네이버 검색 페이지 구조 변경 시 수집 선택자 수정이 필요할 수 있습니다.</footer>
+  </main>
+</body>
+</html>
